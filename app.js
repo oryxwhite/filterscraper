@@ -3,28 +3,41 @@ const cheerio = require('cheerio')
 const pretty = require('pretty')
 const fs = require('fs')
 
-const url = 'https://filtermag.org/author/sessi/'
+const url1 = 'https://filtermag.org/author/sessi/'
 
-async function getPostTitles() {
-    try{
-        const { data } = await axios.get(url)
-        const $ = cheerio.load(data)
-        const listItems = $('#df-content-render')
-        const articles = listItems.children()
-        const titles = []
-        listItems.each((idx, el) => {
-            const title = { name: '' }
-            title.name = $(el).children('h4').text()
-            titles.push(title)
-        })
+async function getPostTitles(url) {
+    const allPosts = []
+    let i = 1
+    while(i <= 22) {
+        let url = `${url1}page/${i}`
+        try{
+            const { data } = await axios.get(url)
+            const $ = cheerio.load(data)
+            const listItems = $('#df-content-render')
+            const articles = listItems.children()
+            
+            articles.each((idx, el) => {
+                const title = { postTitle: '', lede: '', imageSource: '' }
+                title.postTitle = $(el).children('h4').text()
+                title.imageSource = $(el).children('.article-img-wrap').children('a').children('img').attr('src')
+                title.lede = $(el).children('p').text()
+                allPosts.push(title)
+            })
 
-        console.log(titles)
+        } catch(err) {
+            console.log(err)
+            }
 
-
-
-
-    } catch(err) {
-
-    }
+        i++
+        
+        }
+        fs.writeFile('filterPostData.json', JSON.stringify(allPosts, null, 2), (err) => {
+            if (err) {
+                console.log(err);
+                return;
+            }
+})
 }
+
+
 getPostTitles()
